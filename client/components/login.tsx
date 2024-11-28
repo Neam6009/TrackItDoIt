@@ -1,14 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -23,9 +22,9 @@ const registerSchema = loginSchema.extend({
   path: ["confirmPassword"],
 })
 
-const handlerRegister = async()=>{
+// const handlerRegister = async()=>{
     
-}
+// }
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)

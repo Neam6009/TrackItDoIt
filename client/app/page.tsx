@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 
 
 export default function Home() {
-    const [currentPage, setCurrentPage] = useState<'dashboard' | 'tasks'>('dashboard') 
-    const [isLoggedIn,setIsLoggedIn] = useState(false);
+    // const [currentPage, setCurrentPage] = useState<'dashboard' | 'tasks'>('dashboard') 
+    const [isLoggedIn,] = useState(false);
 
 
     return (
