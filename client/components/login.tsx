@@ -23,6 +23,10 @@ const registerSchema = loginSchema.extend({
   path: ["confirmPassword"],
 })
 
+const handlerRegister = async()=>{
+    
+}
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
   const schema = isLogin ? loginSchema : registerSchema
