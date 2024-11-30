@@ -22,7 +22,7 @@ import useSWR from 'swr'
 import { Task } from '@/types'
 import toast from 'react-hot-toast'
 
-export default function TaskManager() {
+export default function TaskManager({ currPage }) {
     const { data: rawTasks, error, isLoading, mutate } = useSWR<Task[]>('/api/data', getUserTasks)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -30,16 +30,21 @@ export default function TaskManager() {
     const [statusFilter, setStatusFilter] = useState<string | null>(null)
     const [priorityFilter, setPriorityFilter] = useState<number | null>(null)
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
+
     const now = new Date();
-    
+    console.log(rawTasks)
+
+    const tasks = rawTasks
+        ? rawTasks.length === 0
+            ? []
+            : rawTasks.map(task => ({
+                ...task,
+                startTime: task.start ? new Date(task.start) : null,
+                endTime: task.end ? new Date(task.end) : null,
+            }))
+        : [];
 
 
-    const tasks = rawTasks?.map(task => ({
-        ...task,
-    
-        startTime: task.start ? new Date(task.start) : null,
-        endTime: task.end ? new Date(task.end) : null
-    }))
 
     const openModal = (task?: Task) => {
         setEditingTask(task || null)
@@ -56,19 +61,19 @@ export default function TaskManager() {
             if (editingTask) {
                 const res = await editTask(task);
                 console.log(res)
-                if(res == 200){
+                if (res == 200) {
                     toast.success("Task updated!")
-                }else if(res == 401){
+                } else if (res == 401) {
                     toast.error("Unauthorized")
-                }else if(res == 400){
+                } else if (res == 400) {
                     toast.error("error updating task")
                 }
 
             } else {
                 const res = await createTask(task)
-                if(res == 201){
+                if (res == 201) {
                     toast.success("Task added!")
-                }else if (res == 400){
+                } else if (res == 400) {
                     toast.error("error creating task")
                 }
             }
@@ -84,20 +89,20 @@ export default function TaskManager() {
         try {
             const deleteList = Array.from(selectedTasks)
             const res = await deleteTask(deleteList)
-            if(res == 200){
+            if (res == 200) {
                 toast.success("Tasks deleted Successfully!")
-            }else if(res == 404){
+            } else if (res == 404) {
                 toast.error("No tasks found to delete")
-            }else if(res == 400){
+            } else if (res == 400) {
                 toast.error("invalid deletion")
             }
             await mutate()
-            
+
         } catch (error) {
-            console.error("error deleting task",error)
+            console.error("error deleting task", error)
         }
 
-       
+
     }
 
     const toggleTaskSelection = (taskId: string) => {
@@ -158,141 +163,152 @@ export default function TaskManager() {
 
     return (
         <div className="container mx-auto p-4">
-            <Dashboard tasks={tasks || []} />
-            <div className="bg-white shadow rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Task list</h2>
-                    <Button onClick={() => setIsModalOpen(true)}>+ Add task</Button>
-                </div>
-                <div className="flex justify-between items-center mb-4">
-                    <Button 
-                        variant="destructive" 
-                        onClick={handleDeleteSelected} 
-                        disabled={selectedTasks.size === 0}
-                    >
-                        Delete selected
-                    </Button>
-                    <div className="flex space-x-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">Sort: {sortOption}</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setSortOption('Start time: ASC')}>
-                                    Start time: ASC
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('Start time: DESC')}>
-                                    Start time: DESC
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('End time: ASC')}>
-                                    End time: ASC
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('End time: DESC')}>
-                                    End time: DESC
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">Priority: {priorityFilter || 'All'}</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                {[1, 2, 3, 4, 5].map(priority => (
-                                    <DropdownMenuItem 
-                                        key={priority} 
-                                        onClick={() => setPriorityFilter(priority)}
-                                    >
-                                        {priority}
-                                    </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuItem onClick={() => setPriorityFilter(null)}>
-                                    All
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">Status: {statusFilter || 'All'}</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setStatusFilter('Pending')}>
-                                    Pending
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setStatusFilter('Finished')}>
-                                    Finished
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setStatusFilter(null)}>
-                                    All
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+            {currPage == "dashboard" ? <Dashboard tasks={tasks || []} /> : (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold">Task list</h2>
+                        <Button onClick={() => setIsModalOpen(true)}>+ Add task</Button>
                     </div>
-                </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12"></TableHead>
-                            <TableHead>Task ID</TableHead>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Start Time</TableHead>
-                            <TableHead>End Time</TableHead>
-                            <TableHead>Total time to finish (hrs)</TableHead>
-                            <TableHead>Time elapsed (hrs)</TableHead>
-                            <TableHead className="text-right">Edit</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedAndFilteredTasks.map((task) => (
-                            <TableRow key={task._id}>
-                                <TableCell>
-                                    <Checkbox
-                                        checked={selectedTasks.has(task._id)}
-                                        onCheckedChange={() => toggleTaskSelection(task._id)}
-                                    />
-                                </TableCell>
-                                <TableCell>{task._id}</TableCell>
-                                <TableCell>{task.title}</TableCell>
-                                <TableCell>{task.priority}</TableCell>
-                                <TableCell>{task.status}</TableCell>
-                                <TableCell>
-                                    {task.startTime?.toLocaleString() || 'Not set'}
-                                </TableCell>
-                                <TableCell>
-                                    {task.endTime?.toLocaleString() || 'Not set'}
-                                </TableCell>
-                                <TableCell>
-                                    {task.startTime && task.endTime
-                                        ? ((task.endTime.getTime() - task.startTime.getTime()) / 
-                                        (1000 * 60 * 60)).toFixed(0)
-                                        : 'N/A'}
-                                </TableCell>
-                                <TableCell>
-                                    {task.startTime && task.endTime
-                                        ? ((now.getTime() - task.startTime.getTime()) / 
-                                        (1000 * 60 * 60)).toFixed(0)
-                                        : 'N/A'}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button 
-                                        variant="ghost" 
-                                        onClick={() => openModal(task)}
-                                    >
-                                        Edit
-                                    </Button>
-                                </TableCell>
+                    <div className="flex justify-between items-center mb-4">
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteSelected}
+                            disabled={selectedTasks.size === 0}
+                        >
+                            Delete selected
+                        </Button>
+                        <div className="flex space-x-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Sort: {sortOption}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => setSortOption('Start time: ASC')}>
+                                        Start time: ASC
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSortOption('Start time: DESC')}>
+                                        Start time: DESC
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSortOption('End time: ASC')}>
+                                        End time: ASC
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSortOption('End time: DESC')}>
+                                        End time: DESC
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Priority: {priorityFilter || 'All'}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {[1, 2, 3, 4, 5].map(priority => (
+                                        <DropdownMenuItem
+                                            key={priority}
+                                            onClick={() => setPriorityFilter(priority)}
+                                        >
+                                            {priority}
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuItem onClick={() => setPriorityFilter(null)}>
+                                        All
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Status: {statusFilter || 'All'}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => setStatusFilter('Pending')}>
+                                        Pending
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setStatusFilter('Finished')}>
+                                        Finished
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setStatusFilter(null)}>
+                                        All
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-12"></TableHead>
+                                <TableHead>Task ID</TableHead>
+                                <TableHead>Title</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Time</TableHead>
+                                <TableHead>End Time</TableHead>
+                                <TableHead>Total time to finish (hrs)</TableHead>
+                                <TableHead>Time elapsed (hrs)</TableHead>
+                                <TableHead className="text-right">Edit</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {sortedAndFilteredTasks.map((task) => (
+                                <TableRow key={task._id}>
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={selectedTasks.has(task._id)}
+                                            onCheckedChange={() => toggleTaskSelection(task._id)}
+                                        />
+                                    </TableCell>
+                                    <TableCell>{task._id}</TableCell>
+                                    <TableCell>{task.title}</TableCell>
+                                    <TableCell>{task.priority}</TableCell>
+                                    <TableCell>{task.status}</TableCell>
+                                    <TableCell>
+                                        {task.startTime?.toLocaleString() || 'Not set'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {task.endTime?.toLocaleString() || 'Not set'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {task.startTime && task.endTime
+                                            ? Math.max(0,
+                                                Number(((task.endTime.getTime() - task.startTime.getTime()) /
+                                                    (1000 * 60 * 60)).toFixed(0))
+                                            )
+                                            : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {task.startTime && task.endTime
+                                            ? Math.max(0,
+                                                Number(
+                                                    ((now.getTime() - task.startTime.getTime()) /
+                                                        (1000 * 60 * 60)).toFixed(0)
+                                                )
+                                            )
+                                            : 'N/A'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => openModal(task)}
+                                        >
+                                            Edit
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+
+
+            )}
+
+
             <TaskModal
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 onSave={handleSaveTask}
                 task={editingTask}
-    
+
             />
         </div>
     )
