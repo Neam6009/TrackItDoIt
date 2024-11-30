@@ -6,7 +6,7 @@ const getUserTasks = async (req, res) => {
     const user = req.user
     const tasks = await Task.find({user:user._id})
     if (!tasks?.length) {
-        return res.status(400).json({ message: 'No tasks found' })
+        return res.status(400).json([])
     }
 
     res.json(tasks)
