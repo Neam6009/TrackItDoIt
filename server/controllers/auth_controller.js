@@ -4,7 +4,8 @@ const jwt = require("jsonwebtoken");
 
 
 const login = async (req,res)=>{
-    const {email,password} = req.body;
+    try {
+        const {email,password} = req.body;
     if(!email || !password){
         return res.status(400).json({message:"All fields are require"})
     }
@@ -21,19 +22,22 @@ const login = async (req,res)=>{
 
     const accessToken = jwt.sign({
         "UserData":{
-            "email":foundUser.email
+            "email":foundUser.email,
+            "id" : foundUser._id
         }
     },
     process.env.ACCESS_TOKEN_SECRET,
     {expiresIn:'1d'}
     )
-
+    
     const refreshToken = jwt.sign(
         {"email" : foundUser.email},
         process.env.REFRESH_TOKEN_SECRET,
         {expiresIn:'5d'}
-       
+        
     )
+    console.log("access  " + accessToken)
+    console.log("refresh  " + refreshToken)
 
     res.cookie('jwt',refreshToken,{
         httpOnly:true,
@@ -43,6 +47,11 @@ const login = async (req,res)=>{
     })
 
     res.json({accessToken})
+        
+    } catch (error) {
+        console.log(error)
+    }
+    
 }
 
 const refresh = (req,res)=>{
@@ -81,15 +90,28 @@ const refresh = (req,res)=>{
 }
 
 const logout = (req,res)=>{
-    const cookies = req.cookies
-    if(!cookies?.jwt)  return res.sendStatus(204)
-    res.clearCookie('jwt',{httpOnly:true,sameSite:'None',secure:true})
-    res.json({message: 'Cookie cleared'})
+    const cookie = req.headers.cookie;
+    if(!cookie)  return res.sendStatus(204)
+    const ck = cookie.split("=")[1]
 
+    res.clearCookie('jwt',{httpOnly:true,sameSite:'None',secure:true})
+    res.status(200).json({message: 'Cookie cleared'})
+
+}
+
+const getToken = async (req,res)=>{
+
+    const cookie = req.headers.cookie;
+    if(!cookie){
+        return res.json("access token not sent")
+    }
+    const ck = cookie.split("=")[1]
+    res.json({token : ck})
 }
 
 module.exports ={
     login,
     refresh,
     logout,
+    getToken
 }

@@ -1,6 +1,4 @@
-
-import React, { useState } from 'react'
-import { Task, SortOption } from '@/types'
+import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -19,58 +17,29 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { TaskModal } from '@/components/TaskModal'
 import { Dashboard } from '@/components/Dashboard'
-
-const initialTasks: Task[] = [
-    {
-        id: 'T-00001',
-        title: 'Buy clothes',
-        priority: 5,
-        status: 'Pending',
-        startTime: new Date('2024-11-26T11:00:00'),
-        endTime: new Date('2024-11-30T11:00:00'),
-    },
-    {
-        id: 'T-00002',
-        title: 'Finish code',
-        priority: 2,
-        status: 'Finished',
-        startTime: new Date('2024-11-25T09:05:00'),
-        endTime: new Date('2024-11-25T15:15:00'),
-    },
-    {
-        id: 'T-00003',
-        title: 'Book travel tickets',
-        priority: 4,
-        status: 'Pending',
-        startTime: new Date('2024-11-19T22:00:00'),
-        endTime: new Date('2024-11-20T23:00:00'),
-    },
-    {
-        id: 'T-00004',
-        title: 'Order groceries',
-        priority: 3,
-        status: 'Finished',
-        startTime: new Date('2024-10-14T10:30:00'),
-        endTime: new Date('2024-10-16T22:30:00'),
-    },
-    {
-        id: 'T-00005',
-        title: 'Medical checkup',
-        priority: 1,
-        status: 'Pending',
-        startTime: new Date('2024-11-19T13:15:00'),
-        endTime: new Date('2024-12-21T17:00:00'),
-    },
-]
+import { createTask, deleteTask, editTask, getUserTasks } from '@/lib/utils'
+import useSWR from 'swr'
+import { Task } from '@/types'
+import toast from 'react-hot-toast'
 
 export default function TaskManager() {
-    const [tasks, setTasks] = useState<Task[]>(initialTasks)
+    const { data: rawTasks, error, isLoading, mutate } = useSWR<Task[]>('/api/data', getUserTasks)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
-    const [sortOption, setSortOption] = useState<SortOption>('Start time: ASC')
-    const [statusFilter, setStatusFilter] = useState<'Pending' | 'Finished' | null>(null)
+    const [sortOption, setSortOption] = useState<string>('Start time: ASC')
+    const [statusFilter, setStatusFilter] = useState<string | null>(null)
     const [priorityFilter, setPriorityFilter] = useState<number | null>(null)
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
+    const now = new Date();
+    
+
+
+    const tasks = rawTasks?.map(task => ({
+        ...task,
+    
+        startTime: task.start ? new Date(task.start) : null,
+        endTime: task.end ? new Date(task.end) : null
+    }))
 
     const openModal = (task?: Task) => {
         setEditingTask(task || null)
@@ -82,58 +51,125 @@ export default function TaskManager() {
         setEditingTask(null)
     }
 
-    const handleSaveTask = (task: Task) => {
-        if (editingTask) {
-            setTasks(tasks.map(t => t.id === task.id ? task : t))
-        } else {
-            setTasks([...tasks, { ...task, id: `T-${String(tasks.length + 1).padStart(5, '0')}` }])
+    const handleSaveTask = async (task: Task) => {
+        try {
+            if (editingTask) {
+                const res = await editTask(task);
+                console.log(res)
+                if(res == 200){
+                    toast.success("Task updated!")
+                }else if(res == 401){
+                    toast.error("Unauthorized")
+                }else if(res == 400){
+                    toast.error("error updating task")
+                }
+
+            } else {
+                const res = await createTask(task)
+                if(res == 201){
+                    toast.success("Task added!")
+                }else if (res == 400){
+                    toast.error("error creating task")
+                }
+            }
+            await mutate()
+            closeModal()
+        } catch (error) {
+            console.error('Error saving task:', error)
         }
-        closeModal()
     }
 
-    const handleDeleteSelected = () => {
-        setTasks(tasks.filter(task => !selectedTasks.has(task.id)))
-        setSelectedTasks(new Set())
+    const handleDeleteSelected = async () => {
+
+        try {
+            const deleteList = Array.from(selectedTasks)
+            const res = await deleteTask(deleteList)
+            if(res == 200){
+                toast.success("Tasks deleted Successfully!")
+            }else if(res == 404){
+                toast.error("No tasks found to delete")
+            }else if(res == 400){
+                toast.error("invalid deletion")
+            }
+            await mutate()
+            
+        } catch (error) {
+            console.error("error deleting task",error)
+        }
+
+       
     }
 
     const toggleTaskSelection = (taskId: string) => {
-        const newSelectedTasks = new Set(selectedTasks)
-        if (newSelectedTasks.has(taskId)) {
-            newSelectedTasks.delete(taskId)
-        } else {
-            newSelectedTasks.add(taskId)
-        }
-        setSelectedTasks(newSelectedTasks)
+        setSelectedTasks(prev => {
+            const newSet = new Set(prev)
+            if (newSet.has(taskId)) {
+                newSet.delete(taskId)
+            } else {
+                newSet.add(taskId)
+            }
+            return newSet
+        })
     }
 
-    const sortedAndFilteredTasks = tasks
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-4">
+                <div className="animate-pulse">
+                    <div className="h-64 bg-gray-200 rounded-lg mb-4"></div>
+                    <div className="h-96 bg-gray-200 rounded-lg"></div>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="container mx-auto p-4">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    Error loading tasks. Please try again later.
+                </div>
+            </div>
+        )
+    }
+
+    const sortedAndFilteredTasks = tasks ? tasks
         .filter(task => !statusFilter || task.status === statusFilter)
         .filter(task => !priorityFilter || task.priority === priorityFilter)
         .sort((a, b) => {
+            const aStart = a.startTime?.getTime() ?? 0
+            const bStart = b.startTime?.getTime() ?? 0
+            const aEnd = a.endTime?.getTime() ?? 0
+            const bEnd = b.endTime?.getTime() ?? 0
+
             switch (sortOption) {
                 case 'Start time: ASC':
-                    return a.startTime.getTime() - b.startTime.getTime()
+                    return aStart - bStart
                 case 'Start time: DESC':
-                    return b.startTime.getTime() - a.startTime.getTime()
+                    return bStart - aStart
                 case 'End time: ASC':
-                    return a.endTime.getTime() - b.endTime.getTime()
+                    return aEnd - bEnd
                 case 'End time: DESC':
-                    return b.endTime.getTime() - a.endTime.getTime()
+                    return bEnd - aEnd
                 default:
                     return 0
             }
-        })
+        }) : []
 
     return (
         <div className="container mx-auto p-4">
-            <Dashboard tasks={tasks} />
+            <Dashboard tasks={tasks || []} />
             <div className="bg-white shadow rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Task list</h2>
                     <Button onClick={() => setIsModalOpen(true)}>+ Add task</Button>
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                    <Button variant="destructive" onClick={handleDeleteSelected} disabled={selectedTasks.size === 0}>
+                    <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteSelected} 
+                        disabled={selectedTasks.size === 0}
+                    >
                         Delete selected
                     </Button>
                     <div className="flex space-x-2">
@@ -142,10 +178,18 @@ export default function TaskManager() {
                                 <Button variant="outline">Sort: {sortOption}</Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setSortOption('Start time: ASC')}>Start time: ASC</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('Start time: DESC')}>Start time: DESC</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('End time: ASC')}>End time: ASC</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortOption('End time: DESC')}>End time: DESC</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSortOption('Start time: ASC')}>
+                                    Start time: ASC
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSortOption('Start time: DESC')}>
+                                    Start time: DESC
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSortOption('End time: ASC')}>
+                                    End time: ASC
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSortOption('End time: DESC')}>
+                                    End time: DESC
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <DropdownMenu>
@@ -154,11 +198,16 @@ export default function TaskManager() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 {[1, 2, 3, 4, 5].map(priority => (
-                                    <DropdownMenuItem key={priority} onClick={() => setPriorityFilter(priority)}>
+                                    <DropdownMenuItem 
+                                        key={priority} 
+                                        onClick={() => setPriorityFilter(priority)}
+                                    >
                                         {priority}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuItem onClick={() => setPriorityFilter(null)}>All</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setPriorityFilter(null)}>
+                                    All
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <DropdownMenu>
@@ -166,9 +215,15 @@ export default function TaskManager() {
                                 <Button variant="outline">Status: {statusFilter || 'All'}</Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setStatusFilter('Pending')}>Pending</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setStatusFilter('Finished')}>Finished</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setStatusFilter(null)}>All</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setStatusFilter('Pending')}>
+                                    Pending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setStatusFilter('Finished')}>
+                                    Finished
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setStatusFilter(null)}>
+                                    All
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -176,7 +231,7 @@ export default function TaskManager() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead className="w-12"></TableHead>
                             <TableHead>Task ID</TableHead>
                             <TableHead>Title</TableHead>
                             <TableHead>Priority</TableHead>
@@ -184,29 +239,48 @@ export default function TaskManager() {
                             <TableHead>Start Time</TableHead>
                             <TableHead>End Time</TableHead>
                             <TableHead>Total time to finish (hrs)</TableHead>
+                            <TableHead>Time elapsed (hrs)</TableHead>
                             <TableHead className="text-right">Edit</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {sortedAndFilteredTasks.map((task) => (
-                            <TableRow key={task.id}>
+                            <TableRow key={task._id}>
                                 <TableCell>
                                     <Checkbox
-                                        checked={selectedTasks.has(task.id)}
-                                        onCheckedChange={() => toggleTaskSelection(task.id)}
+                                        checked={selectedTasks.has(task._id)}
+                                        onCheckedChange={() => toggleTaskSelection(task._id)}
                                     />
                                 </TableCell>
-                                <TableCell>{task.id}</TableCell>
+                                <TableCell>{task._id}</TableCell>
                                 <TableCell>{task.title}</TableCell>
                                 <TableCell>{task.priority}</TableCell>
                                 <TableCell>{task.status}</TableCell>
-                                <TableCell>{task.startTime.toLocaleString()}</TableCell>
-                                <TableCell>{task.endTime.toLocaleString()}</TableCell>
                                 <TableCell>
-                                    {((task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)).toFixed(2)}
+                                    {task.startTime?.toLocaleString() || 'Not set'}
+                                </TableCell>
+                                <TableCell>
+                                    {task.endTime?.toLocaleString() || 'Not set'}
+                                </TableCell>
+                                <TableCell>
+                                    {task.startTime && task.endTime
+                                        ? ((task.endTime.getTime() - task.startTime.getTime()) / 
+                                        (1000 * 60 * 60)).toFixed(0)
+                                        : 'N/A'}
+                                </TableCell>
+                                <TableCell>
+                                    {task.startTime && task.endTime
+                                        ? ((now.getTime() - task.startTime.getTime()) / 
+                                        (1000 * 60 * 60)).toFixed(0)
+                                        : 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" onClick={() => openModal(task)}>Edit</Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => openModal(task)}
+                                    >
+                                        Edit
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -218,10 +292,8 @@ export default function TaskManager() {
                 onClose={closeModal}
                 onSave={handleSaveTask}
                 task={editingTask}
+    
             />
         </div>
     )
 }
-
-
-

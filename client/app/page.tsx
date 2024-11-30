@@ -1,16 +1,62 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import TaskManager from '@/components/TaskManager'
 import AuthPage from '@/components/login'
 
 import { Button } from "@/components/ui/button"
+import { useUser } from '@/context/UserContext'
+import {jwtDecode} from "jwt-decode"; 
+import { logout } from '@/lib/utils'
+
 
 
 export default function Home() {
-    // const [currentPage, setCurrentPage] = useState<'dashboard' | 'tasks'>('dashboard') 
-    const [isLoggedIn,] = useState(false);
+    const {user,setUser} = useUser();
+    
+    const handleCookie = async ()=>{
+        try {
+            const res = await fetch( process.env.NEXT_PUBLIC_BACKEND_URL+"/auth/getToken",{
+                "credentials":'include'
+            });
+            const data = await res.json()
+            const token = data.token;
+
+            if(token){
+                const decoded: any = jwtDecode(token);
+                setUser(decoded); 
+            }
+
+        } catch (error) {
+            console.log("failed to fetch token" + error)
+        }
+    }
+
+    const handleLogout = async()=>{
+        try {
+        const status = await logout();
+        if(status == 200){
+            setIsLoggedIn(false);
+            setUser(null)
+        }   
+        } catch (error) {
+            console.log("logout error")
+        }
+    }
+
+    
+    const [isLoggedIn,setIsLoggedIn] = useState(user? true:false);
+
+    useEffect(()=>{
+        handleCookie()
+    },[])
+
+    useEffect(()=>{
+        setIsLoggedIn(user?true:false)
+    },[user])
+
+    
 
 
     return (
@@ -22,14 +68,17 @@ export default function Home() {
                         <nav>
             
                         </nav>
-                        <Button variant="outline">Sign out</Button>
+                        {
+                    
+                    isLoggedIn ? <Button variant="outline" onClick={handleLogout}>Sign out</Button> :""
+                }
+                        
                     </div>
                 </div>
             </header>
             <main>
                 <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                     {
-                    
                         isLoggedIn ? <TaskManager /> : <AuthPage/>
                     }
                 </div>

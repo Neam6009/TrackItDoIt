@@ -4,10 +4,10 @@ const taskController = require('../controllers/task_controller')
 const verifyJWT = require('../middleware/verifyJWT')
 
 router.use(verifyJWT)
-router.route("/getAll").get(taskController.getAllTasks)
-router.route("/create").get(taskController.createTask)
-router.route("/delete/:id").delete(taskController.deleteTask)
-router.route("/update/:id").post(taskController.updateTask)
+router.route("/getUserTasks").get(taskController.getUserTasks)
+router.route("/create").post(taskController.createTask)
+router.route("/delete").delete(taskController.deleteTask)
+router.route("/update").post(taskController.updateTask)
 
 
 

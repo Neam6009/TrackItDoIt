@@ -7,14 +7,14 @@ type DashboardProps = {
 }
 
 export function Dashboard({ tasks }: DashboardProps) {
-    const totalTasks = tasks.length
-    const completedTasks = tasks.filter(task => task.status === 'Finished').length
+    const totalTasks = tasks?.length
+    const completedTasks = tasks?.filter(task => task.status === 'Finished')?.length
     const pendingTasks = totalTasks - completedTasks
     const averageTimePerTask = tasks
-        .filter(task => task.status === 'Finished')
-        .reduce((acc, task) => acc + (task.endTime.getTime() - task.startTime.getTime()), 0) / (completedTasks * 3600000)
+        ?.filter(task => task.status === 'Finished')
+        ?.reduce((acc, task) => acc + (task.endTime.getTime() - task.startTime.getTime()), 0) / (completedTasks * 3600000)
 
-    const pendingTasksSummary = tasks.filter(task => task.status === 'Pending')
+    const pendingTasksSummary = tasks?.filter(task => task.status === 'Pending')
     const totalTimeLapsed = pendingTasksSummary.reduce((acc, task) => acc + (new Date().getTime() - task.startTime.getTime()), 0) / 3600000
     const totalTimeToFinish = pendingTasksSummary.reduce((acc, task) => acc + (task.endTime.getTime() - new Date().getTime()), 0) / 3600000
 

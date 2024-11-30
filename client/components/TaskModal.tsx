@@ -17,6 +17,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { toast } from 'react-hot-toast';
 
 type TaskModalProps = {
     isOpen: boolean
@@ -25,20 +26,30 @@ type TaskModalProps = {
     task?: Task | null
 }
 
+const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
     const [title, setTitle] = useState('')
     const [priority, setPriority] = useState<Task['priority']>(3)
     const [status, setStatus] = useState<Task['status']>('Pending')
-    const [startTime, setStartTime] = useState('')
-    const [endTime, setEndTime] = useState('')
+    const [start, setStartTime] = useState('')
+    const [end, setEndTime] = useState('')
+    
 
     useEffect(() => {
         if (task) {
             setTitle(task.title)
             setPriority(task.priority)
             setStatus(task.status)
-            setStartTime(task.startTime.toISOString().slice(0, 16))
-            setEndTime(task.endTime.toISOString().slice(0, 16))
+            setStartTime(formatDateForInput(new Date(task.start)))
+            setEndTime(formatDateForInput(new Date(task.end)))
         } else {
             setTitle('')
             setPriority(3)
@@ -46,20 +57,33 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
             setStartTime('')
             setEndTime('')
         }
+
     }, [task])
 
     const handleSave = () => {
-        onSave({
-            id: task?.id || '',
-            title,
-            priority,
-            status,
-            startTime: new Date(startTime),
-            endTime: new Date(endTime),
-        })
+
+        if(title == '' || !priority || !status || start == '' || end == ''){
+            toast.error("please enter all task details")
+        }else{
+            task? onSave({
+                _id: task._id,
+                title,
+                priority,
+                status,
+                start: new Date(start),
+                end: status == "Finished" ? new Date() : new Date(end),
+            }) : onSave({
+                title,
+                priority,
+                status,
+                start: new Date(start),
+                end: new Date(end),
+            })
+
+        }
     }
 
-    return (
+    return (    
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -113,25 +137,26 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="startTime" className="text-right">
+                        <Label htmlFor="start" className="text-right">
                             Start time
                         </Label>
                         <Input
-                            id="startTime"
+                            id="start"
                             type="datetime-local"
-                            value={startTime}
+                            value={start}
                             onChange={(e) => setStartTime(e.target.value)}
                             className="col-span-3"
+                            
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="endTime" className="text-right">
+                        <Label htmlFor="end" className="text-right">
                             End time
                         </Label>
                         <Input
-                            id="endTime"
+                            id="end"
                             type="datetime-local"
-                            value={endTime}
+                            value={end}
                             onChange={(e) => setEndTime(e.target.value)}
                             className="col-span-3"
                         />

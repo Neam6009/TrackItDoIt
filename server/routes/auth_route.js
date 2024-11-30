@@ -2,12 +2,12 @@ const express =  require("express");
 const router =  express.Router()
 const authController = require("../controllers/auth_controller")
 const loginLimiter = require("../middleware/loginLimiter")
-const verifyJWT = require("../middleware/verifyJWT")
 
-router.use(verifyJWT)
 
-router.route("/").post(loginLimiter,authController.login)
- 
+router.route("/login").post(loginLimiter,authController.login)
+
+router.route("/getToken").get(authController.getToken)
+
 
 router.route("/refresh")
         .get(authController.refresh)

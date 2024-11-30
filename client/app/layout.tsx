@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { UserProvider } from "@/context/UserContext";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -17,6 +19,9 @@ export const metadata: Metadata = {
   title: "Task Management",
 };
 
+
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +32,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+      <UserProvider>
+      <Toaster position="top-right" />
+          {children}
+        </UserProvider>  
       </body>
     </html>
   );

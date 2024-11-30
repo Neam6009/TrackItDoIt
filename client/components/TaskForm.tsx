@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Task, generateId } from '@/types'
+import { Task } from '@/types'
 
 type TaskFormProps = {
     onAddTask: (task: Task) => void
@@ -18,7 +18,6 @@ export function TaskForm({ onAddTask }: TaskFormProps) {
         e.preventDefault()
         const now = new Date()
         const newTask: Task = {
-            id: generateId(),
             title,
             startTime: now,
             endTime: new Date(now.getTime() + 60 * 60 * 1000), // Default to 1 hour from now
