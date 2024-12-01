@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -19,10 +19,10 @@ import { TaskModal } from '@/components/TaskModal'
 import { Dashboard } from '@/components/Dashboard'
 import { createTask, deleteTask, editTask, getUserTasks } from '@/lib/utils'
 import useSWR from 'swr'
-import { Task } from '@/types'
+import { Task, TaskManagerProps } from '@/types'
 import toast from 'react-hot-toast'
 
-export default function TaskManager({ currPage }) {
+export default function TaskManager({ currPage  } : TaskManagerProps) {
     const { data: rawTasks, error, isLoading, mutate } = useSWR<Task[]>('/api/data', getUserTasks)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -39,8 +39,8 @@ export default function TaskManager({ currPage }) {
             ? []
             : rawTasks.map(task => ({
                 ...task,
-                startTime: task.start ? new Date(task.start) : null,
-                endTime: task.end ? new Date(task.end) : null,
+                start: task.start ? new Date(task.start) : null,
+                end: task.end ? new Date(task.end) : null,
             }))
         : [];
 
@@ -142,10 +142,10 @@ export default function TaskManager({ currPage }) {
         .filter(task => !statusFilter || task.status === statusFilter)
         .filter(task => !priorityFilter || task.priority === priorityFilter)
         .sort((a, b) => {
-            const aStart = a.startTime?.getTime() ?? 0
-            const bStart = b.startTime?.getTime() ?? 0
-            const aEnd = a.endTime?.getTime() ?? 0
-            const bEnd = b.endTime?.getTime() ?? 0
+            const aStart = a.start?.getTime() ?? 0
+            const bStart = b.start?.getTime() ?? 0
+            const aEnd = a.end?.getTime() ?? 0
+            const bEnd = b.end?.getTime() ?? 0
 
             switch (sortOption) {
                 case 'Start time: ASC':
@@ -253,8 +253,8 @@ export default function TaskManager({ currPage }) {
                                 <TableRow key={task._id}>
                                     <TableCell>
                                         <Checkbox
-                                            checked={selectedTasks.has(task._id)}
-                                            onCheckedChange={() => toggleTaskSelection(task._id)}
+                                            checked={selectedTasks.has(task._id || "")}
+                                            onCheckedChange={() => toggleTaskSelection(task._id || "")}
                                         />
                                     </TableCell>
                                     <TableCell>{task._id}</TableCell>
@@ -262,24 +262,24 @@ export default function TaskManager({ currPage }) {
                                     <TableCell>{task.priority}</TableCell>
                                     <TableCell>{task.status}</TableCell>
                                     <TableCell>
-                                        {task.startTime?.toLocaleString() || 'Not set'}
+                                        {task.start?.toLocaleString() || 'Not set'}
                                     </TableCell>
                                     <TableCell>
-                                        {task.endTime?.toLocaleString() || 'Not set'}
+                                        {task.end?.toLocaleString() || 'Not set'}
                                     </TableCell>
                                     <TableCell>
-                                        {task.startTime && task.endTime
+                                        {task.start && task.end
                                             ? Math.max(0,
-                                                Number(((task.endTime.getTime() - task.startTime.getTime()) /
+                                                Number(((task.end.getTime() - task.start.getTime()) /
                                                     (1000 * 60 * 60)).toFixed(0))
                                             )
                                             : 'N/A'}
                                     </TableCell>
                                     <TableCell>
-                                        {task.startTime && task.endTime
+                                        {task.start && task.end
                                             ? Math.max(0,
                                                 Number(
-                                                    ((now.getTime() - task.startTime.getTime()) /
+                                                    ((now.getTime() - task.start.getTime()) /
                                                         (1000 * 60 * 60)).toFixed(0)
                                                 )
                                             )

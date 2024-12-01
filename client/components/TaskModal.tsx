@@ -39,8 +39,8 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
     const [title, setTitle] = useState('')
     const [priority, setPriority] = useState<Task['priority']>(3)
     const [status, setStatus] = useState<Task['status']>('Pending')
-    const [start, setStartTime] = useState('')
-    const [end, setEndTime] = useState('')
+    const [start, setstart] = useState('')
+    const [end, setend] = useState('')
     
 
     useEffect(() => {
@@ -48,14 +48,14 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
             setTitle(task.title)
             setPriority(task.priority)
             setStatus(task.status)
-            setStartTime(formatDateForInput(new Date(task.start)))
-            setEndTime(formatDateForInput(new Date(task.end)))
+            setstart(formatDateForInput(new Date(task.start || "")))
+            setend(formatDateForInput(new Date(task.end || "")))
         } else {
             setTitle('')
             setPriority(3)
             setStatus('Pending')
-            setStartTime('')
-            setEndTime('')
+            setstart('')
+            setend('')
         }
 
     }, [task])
@@ -65,20 +65,24 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
         if(title == '' || !priority || !status || start == '' || end == ''){
             toast.error("please enter all task details")
         }else{
-            task? onSave({
-                _id: task._id,
-                title,
-                priority,
-                status,
-                start: new Date(start),
-                end: status == "Finished" ? new Date() : new Date(end),
-            }) : onSave({
-                title,
-                priority,
-                status,
-                start: new Date(start),
-                end: new Date(end),
-            })
+            if(task){
+                onSave({
+                    _id: task._id,
+                    title,
+                    priority,
+                    status,
+                    start: new Date(start),
+                    end: status == "Finished" ? new Date() : new Date(end),
+                })
+            }else{
+                onSave({
+                    title,
+                    priority,
+                    status,
+                    start: new Date(start),
+                    end: new Date(end),
+                })
+            }
 
         }
     }
@@ -144,7 +148,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             id="start"
                             type="datetime-local"
                             value={start}
-                            onChange={(e) => setStartTime(e.target.value)}
+                            onChange={(e) => setstart(e.target.value)}
                             className="col-span-3"
                             
                         />
@@ -157,7 +161,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             id="end"
                             type="datetime-local"
                             value={end}
-                            onChange={(e) => setEndTime(e.target.value)}
+                            onChange={(e) => setend(e.target.value)}
                             className="col-span-3"
                         />
                     </div>

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { useUser } from "@/context/UserContext"
+import toast from "react-hot-toast"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -48,7 +49,12 @@ export default function AuthPage() {
             await login(values,setUser)
             form.reset()
         } else {
-            await register(values)
+            const reg = await register(values)
+            if(reg?.status == 201){
+                toast.success("user registered successfully, pls login")
+            }else if (reg?.status == 400){
+                toast.error("error registering user " + reg.msg)
+            }
 
 
             form.reset()

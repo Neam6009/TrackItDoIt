@@ -2,17 +2,19 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import {jwtDecode} from "jwt-decode"; 
+import { currUser } from "@/types";
 
 
 interface UserData {
     email: string;
-    id:string
+    id?:string,
+    _id?:string
 }
 
 
 interface UserContextProps {
     user: UserData | null;
-    setUser: (user: UserData | null) => void;
+    setUser: (user: currUser | null) => void;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);

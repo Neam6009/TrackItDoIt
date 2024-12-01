@@ -1,10 +1,7 @@
-import { Value } from "@radix-ui/react-select"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import Cookies from "js-cookie";
 import {jwtDecode} from 'jwt-decode';
-import { useUser } from "@/context/UserContext";
-import { Task } from "@/types";
+import { currUser, Task, token, User } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -12,7 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 
 
 
-export const login =  async(values:any,setUser:any)=>{
+
+export const login =  async(values:User,setUser: (user: currUser | null) => void)=>{
 
   try {
     const res = await fetch( process.env.NEXT_PUBLIC_BACKEND_URL+"/auth/login",{
@@ -31,7 +29,7 @@ export const login =  async(values:any,setUser:any)=>{
     const accessToken = await res.json(); 
     if (accessToken) {
        
-        const decoded: any =  await jwtDecode(accessToken.accessToken);
+        const decoded: token =  await jwtDecode(accessToken.accessToken);
         // console.log(decoded);
         await setUser(decoded.UserData); 
     } else {
@@ -45,7 +43,7 @@ export const login =  async(values:any,setUser:any)=>{
 }
 
 
-export const register = async(values:any)=>{
+export const register = async(values:User)=>{
   try {
     const res = await fetch( process.env.NEXT_PUBLIC_BACKEND_URL+"/users/register",{
         method:"POST",
@@ -54,6 +52,9 @@ export const register = async(values:any)=>{
             "Content-Type": "application/json",
         }
       })
+      const msg = await res.json()
+    const data = {status : res.status,msg:msg }
+    return data
 } catch (error) {
     console.log(error)
 }

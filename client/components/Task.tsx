@@ -14,7 +14,7 @@ export function Task({ task, onComplete }: TaskProps) {
 
     const handleComplete = () => {
         setIsChecked(true)
-        onComplete(task.id)
+        onComplete(task._id || "")
     }
 
     return (
@@ -22,19 +22,19 @@ export function Task({ task, onComplete }: TaskProps) {
             <div>
                 <h3 className="font-semibold">{task.title}</h3>
                 <p className="text-sm text-gray-500">
-                    Start: {task.startTime.toLocaleString()} |
-                    End: {task.endTime.toLocaleString()} |
+                    Start: {(task.start || new Date()).toLocaleString()} |
+                    End: {(task.end || new Date()).toLocaleString()} |
                     Priority: {task.priority}
                 </p>
             </div>
             <div className="flex items-center space-x-2">
                 <Checkbox
-                    id={`task-${task.id}`}
+                    id={`task-${task._id}`}
                     checked={isChecked}
                     onCheckedChange={handleComplete}
                     disabled={task.status.toLocaleLowerCase() === 'finished'}
                 />
-                <label htmlFor={`task-${task.id}`}>
+                <label htmlFor={`task-${task._id}`}>
                     {task.status.toLocaleLowerCase() === 'finished' ? 'Completed' : 'Mark as complete'}
                 </label>
             </div>

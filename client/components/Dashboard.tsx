@@ -19,12 +19,12 @@ export function Dashboard({ tasks }: DashboardProps) {
     const pendingTasks = totalTasks - completedTasks
     const averageTimePerTask = tasks
         ?.filter(task => task.status === 'Finished')
-        ?.reduce((acc, task) => acc + (new Date(task.end).getTime() - new Date(task.start).getTime()), 0) / (completedTasks * 3600000)
+        ?.reduce((acc, task) => acc + (new Date(task.end || "").getTime() - new Date(task.start || "").getTime()), 0) / (completedTasks * 3600000)
 
     const pendingTasksSummary = tasks?.filter(task => task.status === 'Pending')
     const completion = (completedTasks / totalTasks) * 100
     const oldestStartTime = pendingTasksSummary.reduce((oldest, task) => {
-        const taskStartTime = new Date(task.start).getTime();
+        const taskStartTime = new Date(task.start || "").getTime();
         return Math.min(oldest, taskStartTime);
     }, Infinity);
     
@@ -34,7 +34,7 @@ export function Dashboard({ tasks }: DashboardProps) {
     
     
     
-    const totalTimeToFinish = pendingTasksSummary.reduce((acc, task) => acc + (new Date(task.end).getTime() - new Date().getTime()), 0) / 3600000
+    const totalTimeToFinish = pendingTasksSummary.reduce((acc, task) => acc + (new Date(task.end || "").getTime() - new Date().getTime()), 0) / 3600000
 
     const taskCompletionData = [
         { name: 'Finished', value: completedTasks },

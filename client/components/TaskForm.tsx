@@ -19,8 +19,8 @@ export function TaskForm({ onAddTask }: TaskFormProps) {
         const now = new Date()
         const newTask: Task = {
             title,
-            startTime: now,
-            endTime: new Date(now.getTime() + 60 * 60 * 1000), // Default to 1 hour from now
+            start: now,
+            end: new Date(now.getTime() + 60 * 60 * 1000), // Default to 1 hour from now
             priority,
             status: 'Pending'
         }

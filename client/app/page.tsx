@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useUser } from '@/context/UserContext'
 import { jwtDecode } from "jwt-decode";
 import { logout } from '@/lib/utils'
+import { UserData } from '@/types'
 
 
 
@@ -26,7 +27,7 @@ export default function Home() {
             const token = data.token;
 
             if (token) {
-                const decoded: any = jwtDecode(token);
+                const decoded : UserData = jwtDecode(token);
                 setUser(decoded);
             }
 
@@ -43,7 +44,7 @@ export default function Home() {
                 setUser(null)
             }
         } catch (error) {
-            console.log("logout error")
+            console.log("logout error ",error)
         }
     }
 
@@ -52,7 +53,7 @@ export default function Home() {
 
     useEffect(() => {
         handleCookie()
-    }, [])
+    }, )
 
     useEffect(() => {
         setIsLoggedIn(user ? true : false)
