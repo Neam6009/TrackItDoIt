@@ -59,6 +59,8 @@ export default function Home() {
         setIsLoggedIn(user ? true : false)
     }, [user])
 
+    useEffect(()=>{},[isLoggedIn])
+
 
 
 
