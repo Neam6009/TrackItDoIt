@@ -22,18 +22,19 @@ export const login =  async(values:User,setUser: (user: currUser | null) => void
         }
       })
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Login failed");
-    }
-    const accessToken = await res.json(); 
-    if (accessToken) {
-       
-        const decoded: token =  await jwtDecode(accessToken.accessToken);
-        // console.log(decoded);
-        await setUser(decoded.UserData); 
-    } else {
-        throw new Error("Access token not found in cookies");
+    if(res.status == 200){
+      const accessToken = await res.json(); 
+      if (accessToken) {
+         
+          const decoded: token =  await jwtDecode(accessToken.accessToken);
+          await setUser(decoded.UserData); 
+          return "Logged in successfully"
+      } else {
+          throw new Error("Access token not found in cookies");
+      }
+    }else{
+      const err = await res.json();
+      return err?.message
     }
     
 } catch (error) {

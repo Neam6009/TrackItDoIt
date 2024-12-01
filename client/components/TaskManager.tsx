@@ -32,8 +32,6 @@ export default function TaskManager({ currPage  } : TaskManagerProps) {
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
 
     const now = new Date();
-    console.log(rawTasks)
-
     const tasks = rawTasks
         ? rawTasks.length === 0
             ? []
@@ -60,7 +58,7 @@ export default function TaskManager({ currPage  } : TaskManagerProps) {
         try {
             if (editingTask) {
                 const res = await editTask(task);
-                console.log(res)
+
                 if (res == 200) {
                     toast.success("Task updated!")
                 } else if (res == 401) {

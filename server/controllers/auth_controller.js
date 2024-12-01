@@ -81,7 +81,7 @@ const refresh = (req,res)=>{
                 {expiresIn:'1d'}
             )
 
-            res.json({accessToken})
+            res.status(200).json({accessToken})
         
         }
 

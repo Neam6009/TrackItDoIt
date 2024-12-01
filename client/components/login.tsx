@@ -46,7 +46,12 @@ export default function AuthPage() {
     const onSubmit = async (values: z.infer<typeof schema>) => {
 
         if (isLogin) {
-            await login(values,setUser)
+            const log = await login(values,setUser)
+            if(log == "Logged in successfully"){
+                toast.success(log)
+            }else{
+                toast.error(log)
+            }
             form.reset()
         } else {
             const reg = await register(values)
